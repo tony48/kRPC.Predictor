@@ -128,7 +128,7 @@ namespace Predictor
 
                 while (partialComputation_.MoveNext())
                 {
-                    ComputeTrajectory(vessel, profile);
+                    ComputeTrajectoryIncrement(vessel, profile);
                 }
 
                 bool finished = true;
