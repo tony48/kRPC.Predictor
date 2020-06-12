@@ -99,16 +99,18 @@ namespace Predictor
         {
             try
             {
+                Debug.Log("[PREDICTOR] Compute 1");
                 // start of trajectory calculation in current frame
                 incrementTime_ = Stopwatch.StartNew();
 
                 // if there is no ongoing partial computation, start a new one
                 if (partialComputation_ == null || vessel != attachedVessel)
                 {
+                    
                     // restart the public buffers
                     patchesBackBuffer_.Clear();
                     maxAccelBackBuffer_ = 0;
-
+                    Debug.Log("[PREDICTOR] Compute 2");
                     attachedVessel = vessel;
 
                     // no vessel, no calculation
@@ -121,15 +123,17 @@ namespace Predictor
 
                     // Create enumerator for Trajectory increment calculator
                     partialComputation_ = ComputeTrajectoryIncrement(vessel, profile).GetEnumerator();
+                    Debug.Log("[PREDICTOR] Compute 3");
                 }
 
                 // we are finished when there are no more partial computations to be done
                 //bool finished = !partialComputation_.MoveNext();
-
-                while (partialComputation_.MoveNext())
+                bool b = true;
+                while (b)
                 {
-                    ComputeTrajectoryIncrement(vessel, profile);
+                    b = partialComputation_.MoveNext();
                 }
+                //partialComputation_.MoveNext();
 
                 bool finished = true;
 
@@ -169,10 +173,10 @@ namespace Predictor
                 aerodynamicModel_ = AerodynamicModelFactory.GetModel(vessel, vessel.mainBody);
             else
                 aerodynamicModel_.IncrementalUpdate();
-
+            Debug.Log("[PREDICTOR] Increment 2");
             // create new VesselState from vessel, or null if it's on the ground
             var state = vessel.LandedOrSplashed ? null : new VesselState(vessel);
-
+            Debug.Log("[PREDICTOR] Increment 3");
             // iterate over patches until MaxPatchCount is reached
             for (int patchIdx = 0; patchIdx < Settings.MaxPatchCount; ++patchIdx)
             {
@@ -185,7 +189,10 @@ namespace Predictor
 
                 // If we spent more time in this calculation than allowed, pause until the next frame
                 if (incrementTime_.ElapsedMilliseconds > MaxIncrementTime)
+                {
+                    Debug.Log("[PREDICTOR] MaxIncrementTime reached");
                     yield return false;
+                }
 
                 // if we have a patched conics solver, check for maneuver nodes
                 if (null != attachedVessel.patchedConicSolver)
@@ -205,10 +212,13 @@ namespace Predictor
 
                     // Add one patch, then pause execution after every patch
                     foreach (var result in AddPatch(state, profile))
+                    {
+                        Debug.Log("[PREDICTOR] Increment WTF");
                         yield return false;
+                    }
                 }
                 
-                Debug.Log("[PREDICTOR] increment 2");
+                Debug.Log("[PREDICTOR] increment 4");
                 state = AddPatch_outState;
             }
         }
