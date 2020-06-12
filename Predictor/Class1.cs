@@ -22,6 +22,7 @@ using System.Diagnostics;
 using UnityEngine;
 using System.Linq;
 using System.Threading;
+using UnityEngine.Assertions.Must;
 using Debug = UnityEngine.Debug;
 
 // ReSharper disable InconsistentNaming
@@ -123,11 +124,19 @@ namespace Predictor
                 }
 
                 // we are finished when there are no more partial computations to be done
-                bool finished = !partialComputation_.MoveNext();
+                //bool finished = !partialComputation_.MoveNext();
+
+                while (partialComputation_.MoveNext())
+                {
+                    ComputeTrajectory(vessel, profile);
+                }
+
+                bool finished = true;
 
                 // when calculation is finished,
                 if (finished)
                 {
+                    Debug.Log("[PREDICTOR] finished");
                     // swap the buffers for the patches and the maximum acceleration,
                     // "publishing" the results
                     var tmp = patches_;
@@ -154,6 +163,7 @@ namespace Predictor
 
         private IEnumerable<bool> ComputeTrajectoryIncrement(Vessel vessel, DescentProfile profile)
         {
+            Debug.Log("[PREDICTOR] Increment");
             // create or update aerodynamic model
             if (aerodynamicModel_ == null || !aerodynamicModel_.isValidFor(vessel, vessel.mainBody))
                 aerodynamicModel_ = AerodynamicModelFactory.GetModel(vessel, vessel.mainBody);
@@ -197,7 +207,8 @@ namespace Predictor
                     foreach (var result in AddPatch(state, profile))
                         yield return false;
                 }
-
+                
+                Debug.Log("[PREDICTOR] increment 2");
                 state = AddPatch_outState;
             }
         }
