@@ -123,9 +123,10 @@ namespace Predictor
 
                     // Create enumerator for Trajectory increment calculator
                     partialComputation_ = ComputeTrajectoryIncrement(vessel, profile).GetEnumerator();
-                    Debug.Log("[PREDICTOR] Compute 3");
+                    Debug.Log("[PREDICTOR] Compute 3 " + partialComputation_.Current);
                 }
 
+                // we are finished when there are no more partial computations to be done
                 // we are finished when there are no more partial computations to be done
                 //bool finished = !partialComputation_.MoveNext();
                 bool b = true;

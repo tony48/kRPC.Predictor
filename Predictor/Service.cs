@@ -16,6 +16,7 @@ namespace Predictor
             CelestialBody body = vessel.InternalVessel.orbit.referenceBody;
             Vector3? impactVect = GetImpactPosition(vessel.InternalVessel);
             Debug.Log("[PREDICTOR] Vessel name : " + vessel.InternalVessel.vesselName);
+            Debug.Log("[PREDICTOR] Vessel is " + vessel.InternalVessel.packed + " + " + vessel.InternalVessel.loaded);
             if (impactVect != null)
             {
                 var worldImpactPos = (Vector3d)impactVect + body.position;
