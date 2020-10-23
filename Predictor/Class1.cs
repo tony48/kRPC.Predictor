@@ -99,7 +99,6 @@ namespace Predictor
         {
             try
             {
-                Debug.Log("[PREDICTOR] Compute 1");
                 // start of trajectory calculation in current frame
                 incrementTime_ = Stopwatch.StartNew();
 
@@ -110,23 +109,19 @@ namespace Predictor
                     // restart the public buffers
                     patchesBackBuffer_.Clear();
                     maxAccelBackBuffer_ = 0;
-                    Debug.Log("[PREDICTOR] Compute 2");
                     attachedVessel = vessel;
 
                     // no vessel, no calculation
                     if (attachedVessel == null)
                     {
                         patches_.Clear();
-                        Debug.Log("[PREDICTOR] attached vessel is null");
                         return;
                     }
 
                     // Create enumerator for Trajectory increment calculator
                     partialComputation_ = ComputeTrajectoryIncrement(vessel, profile).GetEnumerator();
-                    Debug.Log("[PREDICTOR] Compute 3 " + partialComputation_.Current);
                 }
 
-                // we are finished when there are no more partial computations to be done
                 // we are finished when there are no more partial computations to be done
                 //bool finished = !partialComputation_.MoveNext();
                 bool b = true;
@@ -141,7 +136,6 @@ namespace Predictor
                 // when calculation is finished,
                 if (finished)
                 {
-                    Debug.Log("[PREDICTOR] finished");
                     // swap the buffers for the patches and the maximum acceleration,
                     // "publishing" the results
                     var tmp = patches_;
@@ -160,7 +154,6 @@ namespace Predictor
             }
             catch (Exception e)
             {
-                Debug.Log("[PREDICTOR] " + e.ToString());
                 ++errorCount_;
                 throw;
             }
@@ -168,33 +161,29 @@ namespace Predictor
 
         private IEnumerable<bool> ComputeTrajectoryIncrement(Vessel vessel, DescentProfile profile)
         {
-            Debug.Log("[PREDICTOR] Increment");
             // create or update aerodynamic model
             if (aerodynamicModel_ == null || !aerodynamicModel_.isValidFor(vessel, vessel.mainBody))
                 aerodynamicModel_ = AerodynamicModelFactory.GetModel(vessel, vessel.mainBody);
             else
                 aerodynamicModel_.IncrementalUpdate();
-            Debug.Log("[PREDICTOR] Increment 2");
             // create new VesselState from vessel, or null if it's on the ground
-            var state = vessel.LandedOrSplashed ? null : new VesselState(vessel);
-            Debug.Log("[PREDICTOR] Increment 3");
+            var state = new VesselState(vessel);
             // iterate over patches until MaxPatchCount is reached
             for (int patchIdx = 0; patchIdx < Settings.MaxPatchCount; ++patchIdx)
             {
                 // stop if we don't have a vessel state
                 if (state == null)
                 {
-                    Debug.Log("[PREDICTOR] STATE IS NUUULL");
-                    break;
+                    state = new VesselState(vessel);
                 }
 
                 // If we spent more time in this calculation than allowed, pause until the next frame
+
+
                 if (incrementTime_.ElapsedMilliseconds > MaxIncrementTime)
                 {
-                    Debug.Log("[PREDICTOR] MaxIncrementTime reached");
                     yield return false;
                 }
-
                 // if we have a patched conics solver, check for maneuver nodes
                 if (null != attachedVessel.patchedConicSolver)
                 {
@@ -212,14 +201,16 @@ namespace Predictor
                     }
 
                     // Add one patch, then pause execution after every patch
-                    foreach (var result in AddPatch(state, profile))
-                    {
-                        Debug.Log("[PREDICTOR] Increment WTF");
+                    foreach (bool result in AddPatch(state, true))
                         yield return false;
-                    }
+                } else
+                {
+
+                    // Add one patch, then pause execution after every patch
+                    foreach (bool result in AddPatch(state, false))
+                        yield return false;
                 }
                 
-                Debug.Log("[PREDICTOR] increment 4");
                 state = AddPatch_outState;
             }
         }
@@ -264,12 +255,17 @@ namespace Predictor
             return to;
         }
         
-        private IEnumerable<bool> AddPatch(VesselState startingState, DescentProfile profile)
+        private IEnumerable<bool> AddPatch(VesselState startingState, bool isActiveVessel)
         {
-            if (null == attachedVessel.patchedConicSolver)
+
+
+            if (isActiveVessel)
             {
-                UnityEngine.Debug.LogWarning("Trajectories: AddPatch() attempted when patchedConicsSolver is null; Skipping.");
-                yield break;
+                if (null == attachedVessel.patchedConicSolver)
+                {
+                    UnityEngine.Debug.LogWarning("Trajectories: AddPatch() attempted when patchedConicsSolver is null; Skipping.");
+                    yield break;
+                }
             }
 
             CelestialBody body = startingState.ReferenceBody;
@@ -286,17 +282,6 @@ namespace Predictor
             // so we populate it with the current orbit and associated encounters etc.
             var flightPlan = new List<Orbit>();
             for (var orbit = attachedVessel.orbit; orbit != null && orbit.activePatch; orbit = orbit.nextPatch)
-            {
-                if (attachedVessel.patchedConicSolver.flightPlan.Contains(orbit))
-                {
-                    Debug.Log("[PREDICTOR] vessel contains orbit");
-                    break;
-                }
-
-                flightPlan.Add(orbit);
-            }
-
-            foreach (var orbit in attachedVessel.patchedConicSolver.flightPlan)
             {
                 flightPlan.Add(orbit);
             }
