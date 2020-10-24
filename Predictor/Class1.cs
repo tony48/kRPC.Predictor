@@ -3,6 +3,7 @@
   Copyright© (c) 2014-2018 A.Korsunsky, (aka fat-lobyte).
   Copyright© (c) 2017-2018 S.Gray, (aka PiezPiedPy).
   Copyright© (c) 2020 tony48.
+  Copyright© (c) 2020 Zoeille.
   This file is part of Predictor.
   Predictor is available under the terms of GPL-3.0-or-later.
   See the LICENSE.md file for more details.
