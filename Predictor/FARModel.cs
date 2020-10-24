@@ -40,7 +40,6 @@ namespace Predictor
             //Debug.Log("Trajectories: getting FAR forces");
             if (vessel_ == null || vessel_.packed)
             {
-                Debug.Log("[PREDICTOR] VESSEL IS NUUUUL");
                 return Vector3.zero;
             }
 
